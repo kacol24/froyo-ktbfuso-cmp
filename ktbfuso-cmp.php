@@ -2,7 +2,7 @@
 
 /**
  * Plugin Name:         CMP REST API
- * Version:             1.0.0
+ * Version:             1.0.2
  * Author:              Froyo
  * GitHub Plugin URI:   https://github.com/kacol24/froyo-ktbfuso-cmp
  */
