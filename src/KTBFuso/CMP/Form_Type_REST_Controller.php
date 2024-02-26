@@ -24,7 +24,7 @@ class Form_Type_REST_Controller extends WP_REST_Controller{
     }
 
     public function get_items_permissions_check( $request ) {
-        return true;
+        return get_current_user_id() > 0;
     }
 
     public function get_items( $request ) {

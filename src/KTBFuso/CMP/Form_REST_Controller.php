@@ -64,7 +64,7 @@ class Form_REST_Controller extends WP_REST_Controller{
     }
 
     public function get_items_permissions_check( $request ) {
-        return true;
+        return get_current_user_id() > 0;
     }
 
     public function get_items( $request ) {
@@ -91,7 +91,7 @@ class Form_REST_Controller extends WP_REST_Controller{
     }
 
     public function get_item_permissions_check( $request ) {
-        return true;
+        return get_current_user_id() > 0;
     }
 
     public function get_item( $request ) {
@@ -132,7 +132,7 @@ class Form_REST_Controller extends WP_REST_Controller{
     }
 
     public function delete_item_permissions_check( $request ) {
-        return true;
+        return get_current_user_id() > 0;
     }
 
     public function delete_item( $request ) {
@@ -160,7 +160,7 @@ class Form_REST_Controller extends WP_REST_Controller{
     }
 
     public function delete_items_permissions_check( $request ) {
-        return true;
+        return get_current_user_id() > 0;
     }
 
     public function delete_items( $request ) {
