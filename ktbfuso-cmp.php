@@ -2,7 +2,7 @@
 
 /**
  * Plugin Name:   CMP REST API
- * Version:       0.0.1
+ * Version:       1.0.0
  * Author:        Froyo
  */
 
