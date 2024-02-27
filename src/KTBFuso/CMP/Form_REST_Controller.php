@@ -12,13 +12,13 @@ use WP_REST_Response;
 class Form_REST_Controller extends WP_REST_Controller{
     public function __construct() {
         $this->namespace     = 'cmp/v1';
-        $this->resource_name = 'forms';
+        $this->rest_base = 'forms';
     }
 
     public function register_routes() {
         register_rest_route(
             $this->namespace,
-            $this->resource_name,
+            $this->rest_base,
             [
                 [
                     'methods'             => \WP_REST_Server::READABLE,
@@ -39,6 +39,8 @@ class Form_REST_Controller extends WP_REST_Controller{
                     'args'                => [
                         'form_ids' => [
                             'required' => true,
+                            'type'        => 'array',
+                            'description' => 'Array of form_ids to be deleted.',
                         ],
                     ],
                 ],
@@ -47,7 +49,7 @@ class Form_REST_Controller extends WP_REST_Controller{
 
         register_rest_route(
             $this->namespace,
-            $this->resource_name . '/(?P<id>[\d]+)',
+            $this->rest_base . '/(?P<id>[\d]+)',
             [
                 [
                     'methods'             => \WP_REST_Server::READABLE,

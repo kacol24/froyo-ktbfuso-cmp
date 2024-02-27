@@ -8,13 +8,13 @@ use WP_REST_Controller;
 class Form_Type_REST_Controller extends WP_REST_Controller{
     public function __construct() {
         $this->namespace     = 'cmp/v1';
-        $this->resource_name = 'form_types';
+        $this->rest_base = 'form_types';
     }
 
     public function register_routes() {
         register_rest_route(
             $this->namespace,
-            $this->resource_name,
+            $this->rest_base,
             [
                 'methods'             => \WP_REST_Server::READABLE,
                 'callback'            => [ $this, 'get_items' ],
