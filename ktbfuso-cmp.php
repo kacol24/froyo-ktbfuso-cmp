@@ -15,11 +15,14 @@ require_once __DIR__ . '/vendor/autoload.php';
 Roots\add_actions( [ 'after_setup_theme', 'rest_api_init' ], 'Roots\bootloader', 5 );
 
 function ktbfuso_cmp_register_my_rest_routes() {
-    $formController = new Form_REST_Controller();
-    $formController->register_routes();
+    $restControllers = [
+        new Form_REST_Controller(),
+        new Form_Type_REST_Controller(),
+    ];
 
-    $formTypeController = new Form_Type_REST_Controller();
-    $formTypeController->register_routes();
+    foreach($restControllers as $restController) {
+        $restController->register_routes();
+    }
 }
 
 add_action( 'rest_api_init', 'ktbfuso_cmp_register_my_rest_routes' );
