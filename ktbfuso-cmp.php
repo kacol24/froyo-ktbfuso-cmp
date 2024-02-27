@@ -2,8 +2,9 @@
 
 /**
  * Plugin Name:         CMP REST API
- * Version:             1.0.2
+ * Version:             1.1.0
  * Author:              Froyo
+ * Description:         REST API Endpoints for Consent Management Platform to consume, get and manage form submission entries.
  * GitHub Plugin URI:   https://github.com/kacol24/froyo-ktbfuso-cmp
  */
 
@@ -20,7 +21,7 @@ function ktbfuso_cmp_register_my_rest_routes() {
         new Form_Type_REST_Controller(),
     ];
 
-    foreach($restControllers as $restController) {
+    foreach ( $restControllers as $restController ) {
         $restController->register_routes();
     }
 }
