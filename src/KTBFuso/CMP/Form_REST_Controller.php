@@ -11,7 +11,7 @@ use WP_REST_Response;
 
 class Form_REST_Controller extends WP_REST_Controller{
     public function __construct() {
-        $this->namespace     = 'cmp/v1';
+        $this->namespace = 'cmp/v1';
         $this->rest_base = 'forms';
     }
 
@@ -30,6 +30,15 @@ class Form_REST_Controller extends WP_REST_Controller{
                             'type'        => 'integer',
                             'description' => 'Form type ID (available form_type_ids can be fetched from /form_types)',
                         ],
+                        'limit'        => [
+                            'default'     => 10,
+                            'type'        => 'integer',
+                            'description' => 'Limits the number of form entries returned.',
+                        ],
+                        'last_form_id' => [
+                            'type'        => 'integer',
+                            'description' => 'Form entries are ordered by ID. So if last_form_id is provided, only form entries with ID greater than provided will be returned.',
+                        ],
                     ],
                 ],
                 [
@@ -38,7 +47,7 @@ class Form_REST_Controller extends WP_REST_Controller{
                     'permission_callback' => [ $this, 'delete_items_permissions_check' ],
                     'args'                => [
                         'form_ids' => [
-                            'required' => true,
+                            'required'    => true,
                             'type'        => 'array',
                             'description' => 'Array of form_ids to be deleted.',
                         ],
@@ -71,11 +80,17 @@ class Form_REST_Controller extends WP_REST_Controller{
 
     public function get_items( $request ) {
         $formTypeId = $request->get_param( 'form_type_id' );
+        $limit      = $request->get_param( 'limit' );
+        $lastFormId = $request->get_param( 'last_form_id' );
 
         $entries = Entry::where( 'form_id', 'cf_' . $formTypeId )
+                        ->when( $lastFormId > 0, function ( $query ) use ( $lastFormId ) {
+                            return $query->where( 'vxcf_leads.id', '>', $lastFormId );
+                        } )
                         ->join( 'posts', function ( $join ) use ( $formTypeId ) {
                             $join->where( 'posts.ID', $formTypeId );
                         } )
+                        ->limit( $limit )
                         ->get();
 
         $data = [];
