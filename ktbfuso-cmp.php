@@ -77,6 +77,6 @@ function send_entry_data_to_cmp( $formData ) {
     $cmpService = new CmpService();
     $formEntry  = $repository->findById( $formEntryId );
     $entryDto   = EntryDto::fromFlamingoEntryModel( $formEntry );
-    print_r( $cmpService->generateConsent( $entryDto ) );
-    die();
+
+    $cmpService->generateConsent( $entryDto );
 }

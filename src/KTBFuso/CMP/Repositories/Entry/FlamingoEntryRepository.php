@@ -2,6 +2,8 @@
 
 namespace KTBFuso\CMP\Repositories\Entry;
 
+use KTBFuso\CMP\DataObjects\CMP\EntryDto;
+use KTBFuso\CMP\DataObjects\CMP\GenerateConsentPayload;
 use KTBFuso\CMP\Models\FlamingoEntry;
 use KTBFuso\CMP\Models\FlamingoEntryDetail;
 use KTBFuso\CMP\Repositories\EntryRepository;
@@ -22,10 +24,18 @@ class FlamingoEntryRepository implements EntryRepository{
     /**
      * @param $consentId
      *
-     * @return void
+     * @return array
      */
     public function findByConsentId( $consentId ) {
-        // TODO: Implement findByConsentId() method.
+        $entryDetail = FlamingoEntryDetail::query()
+                                          ->where(
+                                              FlamingoEntryDetail::COLUMN_KEY,
+                                              FlamingoEntryDetail::KEY_CONSENT_ID
+                                          )->firstOrFail();
+
+        $entryDto = EntryDto::fromFlamingoEntryModel( $entryDetail->entry );
+
+        return GenerateConsentPayload::fromDto( $entryDto )->toArray();
     }
 
     /**
@@ -39,18 +49,15 @@ class FlamingoEntryRepository implements EntryRepository{
         $entry = FlamingoEntry::find( $formId );
 
         $entry->details()->updateOrCreate( [
-            FlamingoEntryDetail::COLUMN_KEY   => FlamingoEntryDetail::KEY_CONSENT_ID,
+            FlamingoEntryDetail::COLUMN_KEY => FlamingoEntryDetail::KEY_CONSENT_ID,
+        ], [
             FlamingoEntryDetail::COLUMN_VALUE => $consentId,
         ] );
 
         $entry->details()->updateOrCreate( [
-            FlamingoEntryDetail::COLUMN_KEY   => FlamingoEntryDetail::KEY_CONSENT_STATUS,
+            FlamingoEntryDetail::COLUMN_KEY => FlamingoEntryDetail::KEY_CONSENT_STATUS,
+        ], [
             FlamingoEntryDetail::COLUMN_VALUE => $consentStatus,
-        ] );
-
-        $entry->details()->updateOrCreate( [
-            FlamingoEntryDetail::COLUMN_KEY   => FlamingoEntryDetail::KEY_CONSENT_ID,
-            FlamingoEntryDetail::COLUMN_VALUE => $consentId,
         ] );
 
         return $entry->refresh();

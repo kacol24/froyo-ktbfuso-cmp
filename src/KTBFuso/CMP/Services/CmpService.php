@@ -11,7 +11,7 @@ use KTBFuso\CMP\Repositories\EntryRepository;
 class CmpService{
     protected $baseUrl = 'https://asia-southeast2-gp-prod-shared-cmp.cloudfunctions.net/gcshrfncq001/ConsentService';
     protected $tennantCode = 'ktb';
-    protected $applicationCode = 'ktbmyfuso';
+    protected $applicationCode = 'ktbweb';
 
     public function __construct() {
         if ( ! $this->applicationCode ) {
@@ -33,7 +33,6 @@ class CmpService{
         $response = Http::baseUrl( $this->baseUrl )
                         ->acceptJson()
                         ->post( $endpoint, $payload );
-        print_r( $response->json( 'isSuccess' ) );
         $log->update( [
             'status'       => $response->status(),
             'response'     => $response->json(),
@@ -41,15 +40,19 @@ class CmpService{
         ] );
 
         if ( ! $response->json( 'isSuccess' ) ) {
+            error_log( $response->json( 'message' ) );
+
             return $response->json( 'message' );
         }
 
         $repository = app()->make( EntryRepository::class );
 
-        return $repository->setConsentId(
+        $repository->setConsentId(
             $entryDto->id,
-            $response->json( 'Consent.ConsentCode' ),
-            $response->json( 'Consent.ConsentStatus' )
+            $response->json( 'consent.ConsentCode' ),
+            $response->json( 'consent.ConsentStatus' )
         );
+
+        print_r($repository->findByConsentId( $response->json( 'consent.ConsentCode' )));
     }
 }

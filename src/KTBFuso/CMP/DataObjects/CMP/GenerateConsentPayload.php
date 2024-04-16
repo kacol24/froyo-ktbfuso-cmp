@@ -58,4 +58,17 @@ class GenerateConsentPayload{
             ],
         ];
     }
+
+    public function toArray() {
+        return [
+            'Name'          => $this->name,
+            'Address'       => $this->address, // nullable
+            'Phone'         => $this->phone,
+            'Email'         => $this->email, // nullable
+            'EntityType'    => 'individual',
+            'CreatedBy'     => $this->createdBy,
+            'CreatedTime'   => Carbon::parse( $this->createdTime )->toDateTimeLocalString(),
+            'ConsentStatus' => 'approved',
+        ];
+    }
 }

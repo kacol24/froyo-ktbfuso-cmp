@@ -20,4 +20,8 @@ class FlamingoEntryDetail extends Model{
     const KEY_CONSENT_ID = 'cmp_consent_id';
 
     const KEY_CONSENT_STATUS = 'cmp_consent_status';
+
+    public function entry() {
+        return $this->belongsTo( FlamingoEntry::class, 'post_id', 'ID');
+    }
 }
