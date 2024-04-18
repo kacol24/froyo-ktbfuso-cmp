@@ -31,7 +31,12 @@ class FlamingoEntryRepository implements EntryRepository{
                                           ->where(
                                               FlamingoEntryDetail::COLUMN_KEY,
                                               FlamingoEntryDetail::KEY_CONSENT_ID
-                                          )->firstOrFail();
+                                          )
+                                          ->where(
+                                              FlamingoEntryDetail::COLUMN_VALUE,
+                                              $consentId
+                                          )
+                                          ->firstOrFail();
 
         $entryDto = EntryDto::fromFlamingoEntryModel( $entryDetail->entry );
 

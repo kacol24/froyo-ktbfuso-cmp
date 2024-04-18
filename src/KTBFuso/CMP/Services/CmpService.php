@@ -47,12 +47,10 @@ class CmpService{
 
         $repository = app()->make( EntryRepository::class );
 
-        $repository->setConsentId(
+        return $repository->setConsentId(
             $entryDto->id,
             $response->json( 'consent.ConsentCode' ),
             $response->json( 'consent.ConsentStatus' )
         );
-
-        print_r($repository->findByConsentId( $response->json( 'consent.ConsentCode' )));
     }
 }
