@@ -2,9 +2,11 @@
 
 namespace KTBFuso\CMP;
 
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Arr;
 use KTBFuso\CMP\Models\Entry;
 use KTBFuso\CMP\Models\FormType;
+use KTBFuso\CMP\Repositories\EntryRepository;
 use WP_Error;
 use WP_REST_Controller;
 use WP_REST_Response;
@@ -58,7 +60,7 @@ class Form_REST_Controller extends WP_REST_Controller{
 
         register_rest_route(
             $this->namespace,
-            $this->rest_base . '/(?P<id>[\d]+)',
+            $this->rest_base . '/(?P<consent_id>\w+)',
             [
                 [
                     'methods'             => \WP_REST_Server::READABLE,
@@ -112,40 +114,25 @@ class Form_REST_Controller extends WP_REST_Controller{
     }
 
     public function get_item( $request ) {
-        $id    = (int) $request['id'];
-        $entry = Entry::query()
-                      ->find( $id );
+        $id = $request['consent_id'];
 
-        if ( empty( $entry ) ) {
-            return new WP_Error( 'ktbfuso_cmp_rest_invalid_form_id', 'Invalid form ID', [ 'status' => 404 ] );
+        if (! $id) {
+            return new WP_Error( 'ktbfuso_cmp_rest_consent_id_required', 'Consent ID is not provided', [ 'status' => 400 ] );
+        }
+
+        $repo = app()->make( EntryRepository::class );
+
+        try {
+            $entry = $repo->findByConsentId( $id );
+        } catch (ModelNotFoundException $e) {
+            return new WP_Error( 'ktbfuso_cmp_rest_invalid_consent_id', 'Consent ID not found', [ 'status' => 404 ] );
         }
 
         return $this->prepare_item_for_response( $entry, $request );
     }
 
     public function prepare_item_for_response( $item, $request ) {
-        $formType   = optional( $item )->post_title;
-        $formTypeId = optional( $item )->ID;
-
-        if ( ! $formTypeId ) {
-            $formTypeId = Arr::last( explode( '_', $item->form_id ) );
-            $formType   = FormType::find( $formTypeId )->post_title;
-        }
-
-        $mapped = [
-            'id'           => $item->id,
-            'form_type_id' => $formTypeId,
-            'form_type'    => $formType,
-        ];
-
-        foreach ( $item->details as $detail ) {
-            $mapped[ $detail->name ] = $detail->value;
-        }
-
-        $mapped['created_at'] = $item->{Entry::CREATED_AT};
-        $mapped['updated_at'] = $item->{Entry::UPDATED_AT};
-
-        return rest_ensure_response( $mapped );
+        return rest_ensure_response( $item );
     }
 
     public function delete_item_permissions_check( $request ) {

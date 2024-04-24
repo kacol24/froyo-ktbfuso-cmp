@@ -12,7 +12,7 @@ class Entry extends Model{
     const UPDATED_AT = 'updated';
 
     protected $with = [
-        'details'
+        'details',
     ];
 
     public function details() {
