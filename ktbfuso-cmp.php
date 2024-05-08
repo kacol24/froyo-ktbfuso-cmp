@@ -62,7 +62,7 @@ function register_bindings() {
 function ktbfuso_cmp_register_my_rest_routes() {
     $restControllers = [
         new Form_REST_Controller(),
-        new Form_Type_REST_Controller(),
+        //new Form_Type_REST_Controller(),
     ];
 
     foreach ( $restControllers as $restController ) {

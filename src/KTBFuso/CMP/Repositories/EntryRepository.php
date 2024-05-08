@@ -7,5 +7,9 @@ interface EntryRepository{
 
     public function findByConsentId( $consentId );
 
+    public function whereInConsentIds( $consentIds );
+
     public function setConsentId( $formId, $consentId, $consentStatus );
+
+    public function deleteByConsentId( $consentId );
 }

@@ -67,4 +67,42 @@ class FlamingoEntryRepository implements EntryRepository{
 
         return $entry->refresh();
     }
+
+    public function deleteByConsentId( $consentId ) {
+        $postMeta = FlamingoEntryDetail::query()
+                                       ->where(
+                                           FlamingoEntryDetail::COLUMN_KEY,
+                                           FlamingoEntryDetail::KEY_CONSENT_ID
+                                       )
+                                       ->where(
+                                           FlamingoEntryDetail::COLUMN_VALUE,
+                                           $consentId
+                                       )
+                                       ->get();
+
+        $postIds = $postMeta->pluck( 'post_id' );
+        FlamingoEntryDetail::whereIn( 'post_id', $postIds )->delete();
+        FlamingoEntry::whereIn( 'ID', $postIds )->delete();
+    }
+
+    public function whereInConsentIds( $consentIds ) {
+        $entries = FlamingoEntryDetail::query()
+                                      ->where(
+                                          FlamingoEntryDetail::COLUMN_KEY,
+                                          FlamingoEntryDetail::KEY_CONSENT_ID
+                                      )
+                                      ->whereIn(
+                                          FlamingoEntryDetail::COLUMN_VALUE,
+                                          $consentIds
+                                      )
+                                      ->get();
+
+        $response = [];
+        foreach ( $entries as $entryDetail ) {
+            $entryDto   = EntryDto::fromFlamingoEntryModel( $entryDetail->entry );
+            $response[] = GenerateConsentPayload::fromDto( $entryDto )->toArray();
+        }
+
+        return $response;
+    }
 }

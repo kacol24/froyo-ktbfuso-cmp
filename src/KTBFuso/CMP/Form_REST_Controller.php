@@ -3,9 +3,8 @@
 namespace KTBFuso\CMP;
 
 use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Illuminate\Support\Arr;
 use KTBFuso\CMP\Models\Entry;
-use KTBFuso\CMP\Models\FormType;
+use KTBFuso\CMP\Models\FlamingoEntry;
 use KTBFuso\CMP\Repositories\EntryRepository;
 use WP_Error;
 use WP_REST_Controller;
@@ -22,36 +21,36 @@ class Form_REST_Controller extends WP_REST_Controller{
             $this->namespace,
             $this->rest_base,
             [
-                [
-                    'methods'             => \WP_REST_Server::READABLE,
-                    'callback'            => [ $this, 'get_items' ],
-                    'permission_callback' => [ $this, 'get_items_permissions_check' ],
-                    'args'                => [
-                        'form_type_id' => [
-                            'required'    => true,
-                            'type'        => 'integer',
-                            'description' => 'Form type ID (available form_type_ids can be fetched from /form_types)',
-                        ],
-                        'limit'        => [
-                            'default'     => 10,
-                            'type'        => 'integer',
-                            'description' => 'Limits the number of form entries returned.',
-                        ],
-                        'last_form_id' => [
-                            'type'        => 'integer',
-                            'description' => 'Form entries are ordered by ID. So if last_form_id is provided, only form entries with ID greater than provided will be returned.',
-                        ],
-                    ],
-                ],
+                //[
+                //    'methods'             => \WP_REST_Server::READABLE,
+                //    'callback'            => [ $this, 'get_items' ],
+                //    'permission_callback' => [ $this, 'get_items_permissions_check' ],
+                //    'args'                => [
+                //        'form_type_id' => [
+                //            'required'    => true,
+                //            'type'        => 'integer',
+                //            'description' => 'Form type ID (available form_type_ids can be fetched from /form_types)',
+                //        ],
+                //        'limit'        => [
+                //            'default'     => 10,
+                //            'type'        => 'integer',
+                //            'description' => 'Limits the number of form entries returned.',
+                //        ],
+                //        'last_form_id' => [
+                //            'type'        => 'integer',
+                //            'description' => 'Form entries are ordered by ID. So if last_form_id is provided, only form entries with ID greater than provided will be returned.',
+                //        ],
+                //    ],
+                //],
                 [
                     'methods'             => \WP_REST_Server::DELETABLE,
                     'callback'            => [ $this, 'delete_items' ],
                     'permission_callback' => [ $this, 'delete_items_permissions_check' ],
                     'args'                => [
-                        'form_ids' => [
+                        'consent_ids' => [
                             'required'    => true,
                             'type'        => 'array',
-                            'description' => 'Array of form_ids to be deleted.',
+                            'description' => 'Array of consent_ids to be deleted.',
                         ],
                     ],
                 ],
@@ -116,15 +115,16 @@ class Form_REST_Controller extends WP_REST_Controller{
     public function get_item( $request ) {
         $id = $request['consent_id'];
 
-        if (! $id) {
-            return new WP_Error( 'ktbfuso_cmp_rest_consent_id_required', 'Consent ID is not provided', [ 'status' => 400 ] );
+        if ( ! $id ) {
+            return new WP_Error( 'ktbfuso_cmp_rest_consent_id_required', 'Consent ID is not provided',
+                [ 'status' => 400 ] );
         }
 
         $repo = app()->make( EntryRepository::class );
 
         try {
             $entry = $repo->findByConsentId( $id );
-        } catch (ModelNotFoundException $e) {
+        } catch ( ModelNotFoundException $e ) {
             return new WP_Error( 'ktbfuso_cmp_rest_invalid_consent_id', 'Consent ID not found', [ 'status' => 404 ] );
         }
 
@@ -140,19 +140,22 @@ class Form_REST_Controller extends WP_REST_Controller{
     }
 
     public function delete_item( $request ) {
-        $id    = (int) $request['id'];
-        $entry = Entry::query()
-                      ->find( $id );
+        $id = $request['consent_id'];
 
-        if ( is_wp_error( $entry ) ) {
-            return $entry;
+        if ( ! $id ) {
+            return new WP_Error( 'ktbfuso_cmp_rest_consent_id_required', 'Consent ID is not provided',
+                [ 'status' => 400 ] );
         }
 
-        if ( empty( $entry ) ) {
-            return new WP_Error( 'ktbfuso_cmp_rest_invalid_form_id', 'Invalid form ID', [ 'status' => 404 ] );
+        $repo = app()->make( EntryRepository::class );
+
+        try {
+            $entry = $repo->findByConsentId( $id );
+        } catch ( ModelNotFoundException $e ) {
+            return new WP_Error( 'ktbfuso_cmp_rest_invalid_consent_id', 'Consent ID not found', [ 'status' => 404 ] );
         }
 
-        $entry->delete();
+        $repo->deleteByConsentId( $id );
 
         $response = new WP_REST_Response();
         $response->set_data( [
@@ -168,11 +171,10 @@ class Form_REST_Controller extends WP_REST_Controller{
     }
 
     public function delete_items( $request ) {
-        $ids = $request['form_ids'];
+        $ids = $request['consent_ids'];
 
-        $entries = Entry::query()
-                        ->whereIn( 'id', $ids )
-                        ->get();
+        $repo = app()->make( EntryRepository::class );
+        $entries = $repo->whereInConsentIds($ids);
 
         if ( is_wp_error( $entries ) ) {
             return $entries;
@@ -187,9 +189,9 @@ class Form_REST_Controller extends WP_REST_Controller{
             $previous[] = $this->prepare_item_for_response( $entry, $request );
         }
 
-        Entry::query()
-             ->whereIn( 'id', $ids )
-             ->delete();
+        foreach ( $ids as $consentId ) {
+            $repo->deleteByConsentId( $consentId );
+        }
 
         $response = new WP_REST_Response();
         $response->set_data( [
