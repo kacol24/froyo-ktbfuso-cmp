@@ -65,6 +65,16 @@ class FlamingoEntryRepository implements EntryRepository{
             FlamingoEntryDetail::COLUMN_VALUE => $consentStatus,
         ] );
 
+        $entry->details()->updateOrCreate( [
+            FlamingoEntryDetail::COLUMN_KEY => '_consent',
+        ], [
+            FlamingoEntryDetail::COLUMN_VALUE =>
+                serialize( [
+                    'Consent ID'     => $consentId,
+                    'Consent Status' => $consentStatus,
+                ] ),
+        ] );
+
         return $entry->refresh();
     }
 
