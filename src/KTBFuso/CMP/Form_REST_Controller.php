@@ -3,8 +3,10 @@
 namespace KTBFuso\CMP;
 
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use KTBFuso\CMP\Models\CmpLog;
 use KTBFuso\CMP\Models\Entry;
 use KTBFuso\CMP\Repositories\EntryRepository;
+use KTBFuso\CMP\Services\CmpService;
 use WP_Error;
 use WP_REST_Controller;
 use WP_REST_Response;
@@ -133,9 +135,22 @@ class Form_REST_Controller extends WP_REST_Controller{
     public function delete_item( $request ) {
         $response = new WP_REST_Response();
 
-        $id = $request['code'];
+        $log = CmpLog::create( [
+            'url'     => 'post_receiver',
+            'host'    => 'webhook',
+            'method'  => 'POST',
+            'request' => $request->get_json_params(),
+        ] );
 
+        $id = $request['code'];
         if ( ! $id ) {
+            $log->update( [
+                'response' => [
+                    'isSuccess' => false,
+                    'message'   => 'ktbfuso_cmp_rest_consent_id_required',
+                ],
+            ] );
+
             return new WP_Error(
                 'ktbfuso_cmp_rest_consent_id_required',
                 'Consent ID is not provided',
@@ -144,6 +159,13 @@ class Form_REST_Controller extends WP_REST_Controller{
         }
 
         if ( ! $request['consent'] ) {
+            $log->update( [
+                'response' => [
+                    'isSuccess' => false,
+                    'message'   => 'ktbfuso_cmp_rest_delete_consent_payload_required',
+                ],
+            ] );
+
             return new WP_Error(
                 'ktbfuso_cmp_rest_delete_consent_payload_required',
                 'Payload is not provided or malformed',
@@ -151,20 +173,33 @@ class Form_REST_Controller extends WP_REST_Controller{
             );
         }
 
-        if ( $request['ConsentStatusCode'] != 'destroyed' ) {
+        if (in_array( $request['consent']['ConsentStatusCode'], ['approved', 'rejected'])) {
+            $log->update( [
+                'response' => [
+                    'isSuccess' => false,
+                    'message'   => 'ConsentStatusCode is not destroy. Record not destroyed.',
+                ],
+            ] );
+
             $response->set_data( [
                 'isSuccess' => false,
-                'message'   => 'Consent record is not destroyed.',
+                'message'   => 'ConsentStatusCode is not destroy. Record not destroyed.',
             ] );
 
             return $response;
         }
 
-        $repo = app()->make( EntryRepository::class );
-
         try {
-            $entry = $repo->findByConsentId( $id );
+            $repo = app()->make( EntryRepository::class );
+            $repo->findByConsentId( $id );
         } catch ( ModelNotFoundException $e ) {
+            $log->update( [
+                'response' => [
+                    'isSuccess' => false,
+                    'message'   => 'ktbfuso_cmp_rest_invalid_consent_id',
+                ],
+            ] );
+
             return new WP_Error(
                 'ktbfuso_cmp_rest_invalid_consent_id',
                 'Consent ID not found',
@@ -172,7 +207,15 @@ class Form_REST_Controller extends WP_REST_Controller{
             );
         }
 
-        $repo->deleteByConsentId( $id );
+        $cmpService = app()->make( CmpService::class );
+        $cmpService->handleDestroyConsent( $id );
+
+        $log->update( [
+            'response' => [
+                'isSuccess' => true,
+                'message'   => 'Consent record destroyed successfully.',
+            ],
+        ] );
 
         $response->set_data( [
             'isSuccess' => true,
