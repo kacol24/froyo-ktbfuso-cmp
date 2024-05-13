@@ -53,4 +53,10 @@ class CmpService{
             $response->json( 'consent.ConsentStatus' )
         );
     }
+
+    public function handleDestroyConsent( $consentId ) {
+        $repo = app()->make( EntryRepository::class );
+
+        return $repo->deleteByConsentId( $consentId );
+    }
 }
