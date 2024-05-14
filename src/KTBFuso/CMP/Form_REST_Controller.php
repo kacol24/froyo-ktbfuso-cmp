@@ -139,7 +139,7 @@ class Form_REST_Controller extends WP_REST_Controller{
             'url'     => 'post_receiver',
             'host'    => 'webhook',
             'method'  => 'POST',
-            'request' => $request->get_json_params(),
+            'request' => array_merge($request->get_query_params(), $request->get_json_params()),
         ] );
 
         $id = $request['code'];
