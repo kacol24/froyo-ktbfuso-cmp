@@ -48,10 +48,11 @@ class FlamingoEntryRepository implements EntryRepository{
      * @param $formId
      * @param $consentId
      * @param $consentStatus
+     * @param $payload
      *
      * @return FlamingoEntry
      */
-    public function setConsentId( $formId, $consentId, $consentStatus, $payload ) {
+    public function setConsentId( $formId, $consentId, $consentStatus, $payload = [] ) {
         $entry = FlamingoEntry::find( $formId );
 
         $entry->details()->updateOrCreate( [
@@ -85,6 +86,28 @@ class FlamingoEntryRepository implements EntryRepository{
         ] );
 
         return $entry->refresh();
+    }
+
+    public function updateByConsentId( $consentId, $data ) {
+        $postMeta = FlamingoEntryDetail::query()
+                                       ->where(
+                                           FlamingoEntryDetail::COLUMN_KEY,
+                                           FlamingoEntryDetail::KEY_CONSENT_ID
+                                       )
+                                       ->where(
+                                           FlamingoEntryDetail::COLUMN_VALUE,
+                                           $consentId
+                                       )
+                                       ->get();
+
+        $postIds = $postMeta->pluck( 'post_id' );
+
+        return FlamingoEntryDetail::whereIn( 'post_id', $postIds )
+                                  ->where( FlamingoEntryDetail::COLUMN_KEY, '_consent' )
+                                  ->update( [
+                                      FlamingoEntryDetail::COLUMN_VALUE =>
+                                          serialize( $data ),
+                                  ] );
     }
 
     public function deleteByConsentId( $consentId ) {

@@ -191,30 +191,29 @@ class Form_REST_Controller extends WP_REST_Controller{
             );
         }
 
+        $cmpService = app()->make( CmpService::class );
         switch ( $request['consent']['ConsentStatusCode'] ) {
             case 'destroyed':
-                $cmpService = app()->make( CmpService::class );
                 $cmpService->handleDestroyConsent( $id );
+                
                 $responsePayload = [
                     'isSuccess' => true,
                     'message'   => 'Consent record destroyed successfully.',
                 ];
-
-                $log->update( [ 'response' => $responsePayload ] );
-                $response->set_data( $responsePayload );
-
-                return $response;
+                break;
             default:
+                $cmpService->handleUpdateConsent( $id, $request['consent'] );
+
                 $responsePayload = [
-                    'isSuccess' => false,
-                    'message'   => 'ConsentStatusCode is not destroy. Record not destroyed.',
+                    'isSuccess' => true,
+                    'message'   => 'Consent record updated successfully.',
                 ];
-
-                $log->update( [ 'response' => $responsePayload ] );
-                $response->set_data( $responsePayload );
-
-                return $response;
         }
+
+        $log->update( [ 'response' => $responsePayload ] );
+        $response->set_data( $responsePayload );
+
+        return $response;
     }
 
     public function delete_items_permissions_check( $request ) {
