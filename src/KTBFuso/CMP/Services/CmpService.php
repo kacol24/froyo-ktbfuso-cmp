@@ -50,7 +50,8 @@ class CmpService{
         return $repository->setConsentId(
             $entryDto->id,
             $response->json( 'consent.ConsentCode' ),
-            $response->json( 'consent.ConsentStatus' )
+            $response->json( 'consent.ConsentStatus' ),
+            $response->json( 'consent' )
         );
     }
 

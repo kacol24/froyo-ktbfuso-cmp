@@ -2,6 +2,7 @@
 
 namespace KTBFuso\CMP\Repositories\Entry;
 
+use Illuminate\Support\Arr;
 use KTBFuso\CMP\DataObjects\CMP\EntryDto;
 use KTBFuso\CMP\DataObjects\CMP\GenerateConsentPayload;
 use KTBFuso\CMP\Models\FlamingoEntry;
@@ -50,7 +51,7 @@ class FlamingoEntryRepository implements EntryRepository{
      *
      * @return FlamingoEntry
      */
-    public function setConsentId( $formId, $consentId, $consentStatus ) {
+    public function setConsentId( $formId, $consentId, $consentStatus, $payload ) {
         $entry = FlamingoEntry::find( $formId );
 
         $entry->details()->updateOrCreate( [
@@ -66,13 +67,21 @@ class FlamingoEntryRepository implements EntryRepository{
         ] );
 
         $entry->details()->updateOrCreate( [
+            FlamingoEntryDetail::COLUMN_KEY => '_field_persetujuan',
+        ], [
+            FlamingoEntryDetail::COLUMN_VALUE =>
+                Arr::first(
+                    array_values(
+                        unserialize( $entry->details->firstWhere( 'meta_key', '_consent' )->meta_value )
+                    )
+                ),
+        ] );
+
+        $entry->details()->updateOrCreate( [
             FlamingoEntryDetail::COLUMN_KEY => '_consent',
         ], [
             FlamingoEntryDetail::COLUMN_VALUE =>
-                serialize( [
-                    'Consent ID'     => $consentId,
-                    'Consent Status' => $consentStatus,
-                ] ),
+                serialize( $payload ),
         ] );
 
         return $entry->refresh();
