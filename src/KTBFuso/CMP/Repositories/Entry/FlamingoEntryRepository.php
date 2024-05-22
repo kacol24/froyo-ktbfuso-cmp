@@ -82,7 +82,15 @@ class FlamingoEntryRepository implements EntryRepository{
             FlamingoEntryDetail::COLUMN_KEY => '_consent',
         ], [
             FlamingoEntryDetail::COLUMN_VALUE =>
-                serialize( $payload ),
+                serialize(
+                    array_merge(
+                        [
+                            FlamingoEntryDetail::KEY_CONSENT_ID     => $consentId,
+                            FlamingoEntryDetail::KEY_CONSENT_STATUS => $consentStatus,
+                        ],
+                        $payload
+                    )
+                ),
         ] );
 
         return $entry->refresh();
@@ -100,13 +108,27 @@ class FlamingoEntryRepository implements EntryRepository{
                                        )
                                        ->get();
 
-        $postIds = $postMeta->pluck( 'post_id' );
+        $consentStatus = $data['ConsentStatusCode'];
+        $postIds       = $postMeta->pluck( 'post_id' );
+
+        FlamingoEntryDetail::whereIn( 'post_id', $postIds )
+                           ->where( FlamingoEntryDetail::COLUMN_KEY, '_consent' )
+                           ->update( [
+                               FlamingoEntryDetail::COLUMN_VALUE => serialize(
+                                   array_merge(
+                                       [
+                                           FlamingoEntryDetail::KEY_CONSENT_ID     => $consentId,
+                                           FlamingoEntryDetail::KEY_CONSENT_STATUS => $consentStatus,
+                                       ],
+                                       $data
+                                   )
+                               ),
+                           ] );
 
         return FlamingoEntryDetail::whereIn( 'post_id', $postIds )
-                                  ->where( FlamingoEntryDetail::COLUMN_KEY, '_consent' )
+                                  ->where( FlamingoEntryDetail::COLUMN_KEY, FlamingoEntryDetail::KEY_CONSENT_STATUS )
                                   ->update( [
-                                      FlamingoEntryDetail::COLUMN_VALUE =>
-                                          serialize( $data ),
+                                      FlamingoEntryDetail::COLUMN_VALUE => $consentStatus,
                                   ] );
     }
 
