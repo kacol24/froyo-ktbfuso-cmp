@@ -2,6 +2,7 @@
 
 namespace KTBFuso\CMP\Repositories\Entry;
 
+use Illuminate\Support\Arr;
 use KTBFuso\CMP\DataObjects\CMP\EntryDto;
 use KTBFuso\CMP\DataObjects\CMP\GenerateConsentPayload;
 use KTBFuso\CMP\Models\FlamingoEntry;
@@ -47,10 +48,11 @@ class FlamingoEntryRepository implements EntryRepository{
      * @param $formId
      * @param $consentId
      * @param $consentStatus
+     * @param $payload
      *
      * @return FlamingoEntry
      */
-    public function setConsentId( $formId, $consentId, $consentStatus ) {
+    public function setConsentId( $formId, $consentId, $consentStatus, $payload = [] ) {
         $entry = FlamingoEntry::find( $formId );
 
         $entry->details()->updateOrCreate( [
@@ -66,16 +68,68 @@ class FlamingoEntryRepository implements EntryRepository{
         ] );
 
         $entry->details()->updateOrCreate( [
+            FlamingoEntryDetail::COLUMN_KEY => '_field_persetujuan',
+        ], [
+            FlamingoEntryDetail::COLUMN_VALUE =>
+                Arr::first(
+                    array_values(
+                        unserialize( $entry->details->firstWhere( 'meta_key', '_consent' )->meta_value )
+                    )
+                ),
+        ] );
+
+        $entry->details()->updateOrCreate( [
             FlamingoEntryDetail::COLUMN_KEY => '_consent',
         ], [
             FlamingoEntryDetail::COLUMN_VALUE =>
-                serialize( [
-                    'Consent ID'     => $consentId,
-                    'Consent Status' => $consentStatus,
-                ] ),
+                serialize(
+                    array_merge(
+                        [
+                            FlamingoEntryDetail::KEY_CONSENT_ID     => $consentId,
+                            FlamingoEntryDetail::KEY_CONSENT_STATUS => $consentStatus,
+                        ],
+                        $payload
+                    )
+                ),
         ] );
 
         return $entry->refresh();
+    }
+
+    public function updateByConsentId( $consentId, $data ) {
+        $postMeta = FlamingoEntryDetail::query()
+                                       ->where(
+                                           FlamingoEntryDetail::COLUMN_KEY,
+                                           FlamingoEntryDetail::KEY_CONSENT_ID
+                                       )
+                                       ->where(
+                                           FlamingoEntryDetail::COLUMN_VALUE,
+                                           $consentId
+                                       )
+                                       ->get();
+
+        $consentStatus = $data['ConsentStatusCode'];
+        $postIds       = $postMeta->pluck( 'post_id' );
+
+        FlamingoEntryDetail::whereIn( 'post_id', $postIds )
+                           ->where( FlamingoEntryDetail::COLUMN_KEY, '_consent' )
+                           ->update( [
+                               FlamingoEntryDetail::COLUMN_VALUE => serialize(
+                                   array_merge(
+                                       [
+                                           FlamingoEntryDetail::KEY_CONSENT_ID     => $consentId,
+                                           FlamingoEntryDetail::KEY_CONSENT_STATUS => $consentStatus,
+                                       ],
+                                       $data
+                                   )
+                               ),
+                           ] );
+
+        return FlamingoEntryDetail::whereIn( 'post_id', $postIds )
+                                  ->where( FlamingoEntryDetail::COLUMN_KEY, FlamingoEntryDetail::KEY_CONSENT_STATUS )
+                                  ->update( [
+                                      FlamingoEntryDetail::COLUMN_VALUE => $consentStatus,
+                                  ] );
     }
 
     public function deleteByConsentId( $consentId ) {

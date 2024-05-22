@@ -139,7 +139,7 @@ class Form_REST_Controller extends WP_REST_Controller{
             'url'     => 'post_receiver',
             'host'    => 'webhook',
             'method'  => 'POST',
-            'request' => $request->get_json_params(),
+            'request' => array_merge( $request->get_query_params(), $request->get_json_params() ),
         ] );
 
         $id = $request['code'];
@@ -173,22 +173,6 @@ class Form_REST_Controller extends WP_REST_Controller{
             );
         }
 
-        if (in_array( $request['consent']['ConsentStatusCode'], ['approved', 'rejected'])) {
-            $log->update( [
-                'response' => [
-                    'isSuccess' => false,
-                    'message'   => 'ConsentStatusCode is not destroy. Record not destroyed.',
-                ],
-            ] );
-
-            $response->set_data( [
-                'isSuccess' => false,
-                'message'   => 'ConsentStatusCode is not destroy. Record not destroyed.',
-            ] );
-
-            return $response;
-        }
-
         try {
             $repo = app()->make( EntryRepository::class );
             $repo->findByConsentId( $id );
@@ -208,19 +192,14 @@ class Form_REST_Controller extends WP_REST_Controller{
         }
 
         $cmpService = app()->make( CmpService::class );
-        $cmpService->handleDestroyConsent( $id );
-
-        $log->update( [
-            'response' => [
-                'isSuccess' => true,
-                'message'   => 'Consent record destroyed successfully.',
-            ],
-        ] );
-
-        $response->set_data( [
+        $cmpService->handleUpdateConsent( $id, $request['consent'] );
+        $responsePayload = [
             'isSuccess' => true,
-            'message'   => 'Consent record destroyed successfully.',
-        ] );
+            'message'   => 'Consent record updated successfully.',
+        ];
+
+        $log->update( [ 'response' => $responsePayload ] );
+        $response->set_data( $responsePayload );
 
         return $response;
     }

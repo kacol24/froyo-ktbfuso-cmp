@@ -50,8 +50,15 @@ class CmpService{
         return $repository->setConsentId(
             $entryDto->id,
             $response->json( 'consent.ConsentCode' ),
-            $response->json( 'consent.ConsentStatus' )
+            $response->json( 'consent.ConsentStatus' ),
+            $response->json( 'consent' )
         );
+    }
+
+    public function handleUpdateConsent( $consentId, $payload ) {
+        $repo = app()->make( EntryRepository::class );
+
+        return $repo->updateByConsentId( $consentId, $payload );
     }
 
     public function handleDestroyConsent( $consentId ) {
